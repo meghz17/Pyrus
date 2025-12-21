@@ -1,6 +1,6 @@
 {
   "date": "2025-12-21",
-  "timestamp": "2025-12-21T04:47:28.921625+00:00",
+  "timestamp": "2025-12-21T13:31:46.281220+00:00",
   "whoop": {
     "recovery": {
       "score": 20.0,
@@ -21,7 +21,7 @@
       "respiratory_rate": 15.996094
     },
     "strain": {
-      "current": 14.959924,
+      "current": 15.021906,
       "workout_count": 0
     }
   }
