@@ -153,7 +153,8 @@ export async function POST(req: Request) {
         const chat = model.startChat({
             history: validatedHistory,
             generationConfig: {
-                maxOutputTokens: 500,
+                maxOutputTokens: 4096,
+                temperature: 0.7,
             },
         });
 
