@@ -5,18 +5,23 @@ from pathlib import Path
 from datetime import datetime
 
 def get_supabase_client():
-    # Try loading from repo root or web-dashboard
-    repo_root = Path(__file__).resolve().parent.parent
-    env_path = repo_root / ".env"
-    web_env_path = repo_root / "web-dashboard" / ".env"
-    
-    if env_path.exists():
-        load_dotenv(env_path)
-    if web_env_path.exists():
-        load_dotenv(web_env_path)
-    
+    # 1. Check os.environ first (GitHub Actions injects secrets here)
     url = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
     key = os.environ.get("SUPABASE_KEY") or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    
+    # 2. Fallback: Try loading from .env files for local development
+    if not url or not key:
+        repo_root = Path(__file__).resolve().parent.parent
+        env_path = repo_root / ".env"
+        web_env_path = repo_root / "web-dashboard" / ".env"
+        
+        if env_path.exists():
+            load_dotenv(env_path, override=True)
+        if web_env_path.exists():
+            load_dotenv(web_env_path, override=True)
+        
+        url = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+        key = os.environ.get("SUPABASE_KEY") or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
     if not url or not key:
         return None
