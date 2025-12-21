@@ -25,15 +25,25 @@ export async function GET() {
 
         // 2. Fallback to Local File (Development / Raspberry Pi)
         const dataPath = path.join(process.cwd(), '../data/combined_health.json');
+        const datePath = path.join(process.cwd(), '../data/friday_date_suggestion.json');
 
-        if (!fs.existsSync(dataPath)) {
-            return NextResponse.json({ error: 'Data file not found' }, { status: 404 });
+        let combined = {};
+
+        if (fs.existsSync(dataPath)) {
+            const fileContents = fs.readFileSync(dataPath, 'utf8');
+            combined = JSON.parse(fileContents);
         }
 
-        const fileContents = fs.readFileSync(dataPath, 'utf8');
-        const data = JSON.parse(fileContents);
+        if (fs.existsSync(datePath)) {
+            const dateContents = fs.readFileSync(datePath, 'utf8');
+            (combined as any).date_suggestion = JSON.parse(dateContents);
+        }
 
-        return NextResponse.json(data);
+        if (Object.keys(combined).length === 0) {
+            return NextResponse.json({ error: 'No data files found' }, { status: 404 });
+        }
+
+        return NextResponse.json(combined);
     } catch (error) {
         console.error('Error reading health data:', error);
         return NextResponse.json({ error: 'Failed to fetch health data' }, { status: 500 });

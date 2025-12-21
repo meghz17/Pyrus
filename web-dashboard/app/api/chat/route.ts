@@ -33,15 +33,24 @@ async function getHealthData() {
     // 2. Fallback to Local Files
     try {
         const dataPath = path.join(process.cwd(), '../data/combined_health.json');
+        const datePath = path.join(process.cwd(), '../data/friday_date_suggestion.json');
+
+        let current = null;
+        let dateSuggestion = null;
+
         if (fs.existsSync(dataPath)) {
-            const fileContents = fs.readFileSync(dataPath, 'utf8');
-            return { current: JSON.parse(fileContents) };
+            current = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
         }
+        if (fs.existsSync(datePath)) {
+            dateSuggestion = JSON.parse(fs.readFileSync(datePath, 'utf8'));
+        }
+
+        return { current, date_suggestion: dateSuggestion };
     } catch (e) {
         console.warn("Failed to read local data", e);
     }
 
-    return { current: null };
+    return { current: null, date_suggestion: null };
 }
 
 function createSystemPrompt(healthData: any) {
@@ -57,7 +66,7 @@ function createSystemPrompt(healthData: any) {
 - Warm, encouraging, and insightful
 - Focus on actionable advice
 - Balance health optimization with life enjoyment
-- Relationship-aware
+- Relationship-aware (Friday date nights are tradition)
 
 **Current Data:**
 `;
@@ -66,16 +75,21 @@ function createSystemPrompt(healthData: any) {
         const current = healthData.current;
         prompt += `\n**Today's Metrics:**\n`;
 
-        // Safety checks for nested structures in case of slightly flexible JSON
         const you = current.you || {};
         const wife = current.wife || {};
 
         if (you.recovery) prompt += `- You: Recovery ${you.recovery.score}%, Sleep ${you.sleep?.hours || '--'}h, Strain ${you.strain?.current || '--'}\n`;
         if (wife.activity) prompt += `- Wife: Sleep ${wife.sleep?.total_hours || '--'}h, Steps ${wife.activity.steps || '--'}\n`;
+    }
 
-        // Note: Can expand this to match Python script fully if 'weekly' and 'date_suggestion' files are also available/synced
-    } else {
-        prompt += "\n(No live health data currently available - please ask the user for context or provide general advice)\n";
+    if (healthData.date_suggestion) {
+        const date = healthData.date_suggestion;
+        prompt += `\n**Date Night Info:**\n`;
+        prompt += `- Days since last date: ${date.last_date?.days_since || 'Unknown'}\n`;
+        prompt += `- This week's energy: ${date.weekly_health?.energy_score}%\n`;
+        if (date.suggested_dates?.length > 0) {
+            prompt += `- Top Friday suggestion: ${date.suggested_dates[0].title}\n`;
+        }
     }
 
     prompt += "\nProvide personalized, actionable health coaching based on this data.";

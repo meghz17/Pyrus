@@ -170,16 +170,35 @@ export default function Home() {
             <h3 className="text-lg font-semibold text-zinc-200 mb-6 relative z-10">Next Date Idea</h3>
 
             <div className="flex-1 flex flex-col justify-center relative z-10">
-              <span className="text-xs font-bold text-pink-500 uppercase tracking-widest mb-2">Recommendation</span>
-              <h4 className="text-3xl font-bold text-white mb-2">Check Date Tracker</h4>
-              <p className="text-zinc-500 text-sm">Update Python scripts to populate date ideas.</p>
+              <span className="text-xs font-bold text-pink-500 uppercase tracking-widest mb-2">
+                {(data as any)?.date_suggestion ? "Weekly Recommendation" : "Status"}
+              </span>
+              <h4 className="text-3xl font-bold text-white mb-2">
+                {(data as any)?.date_suggestion?.suggested_dates?.[0]?.title || "Planning..."}
+              </h4>
+              <p className="text-zinc-500 text-sm leading-relaxed">
+                {(data as any)?.date_suggestion?.suggested_dates?.[0]?.description || "Pyrus is analyzing your weekly energy to suggest the perfect Friday date."}
+              </p>
 
-              <div className="mt-8 flex items-center gap-2">
-                <div className="h-1 flex-1 bg-zinc-800 rounded-full overflow-hidden">
-                  <div className="h-full w-3/4 bg-zinc-600 rounded-full" />
+              {(data as any)?.date_suggestion && (
+                <div className="mt-8 flex items-center gap-4">
+                  <div className="px-3 py-1 rounded-full bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase tracking-wider border border-white/5">
+                    Energy: {(data as any)?.date_suggestion?.weekly_health?.energy_level}
+                  </div>
+                  <div className="px-3 py-1 rounded-full bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase tracking-wider border border-white/5">
+                    Type: {(data as any)?.date_suggestion?.suggested_dates?.[0]?.type}
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-zinc-400">Wait...</span>
-              </div>
+              )}
+
+              {!(data as any)?.date_suggestion && (
+                <div className="mt-8 flex items-center gap-2">
+                  <div className="h-1 flex-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full w-3/4 bg-zinc-600 rounded-full animate-pulse" />
+                  </div>
+                  <span className="text-xs font-bold text-zinc-400">Syncing...</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
