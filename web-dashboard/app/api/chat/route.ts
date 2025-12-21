@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
-import { OpenAI } from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
 import { supabase } from '@/lib/supabase';
 
-// Initialize OpenAI client lazily or with a check to prevent build-time crashes
-const getOpenAIClient = () => {
-    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+// Initialize Gemini client lazily
+const getGeminiClient = () => {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
     if (!apiKey) {
         return null;
     }
-    return new OpenAI({
-        apiKey,
-        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
-    });
+    return new GoogleGenerativeAI(apiKey);
 };
 
 async function getHealthData() {
@@ -29,9 +26,10 @@ async function getHealthData() {
         if (!error && data) {
             return {
                 current: {
-                    you: data.user_data?.you || data.user_data, // Handle nested structure diffs
+                    you: data.user_data?.you || data.user_data,
                     wife: data.wife_data?.wife || data.wife_data
-                }
+                },
+                date_suggestion: data.date_suggestion
             };
         }
     }
@@ -65,7 +63,7 @@ function createSystemPrompt(healthData: any) {
 **Your User (Whoop):**
 - Recovery, Sleep, Strain, HRV, Resting HR
 
-**Wife (Oura Ring):**
+**Meghna (Oura Ring):**
 - Readiness, Sleep, Activity, Steps, Resting HR  
 
 **Your Personality:**
@@ -85,7 +83,7 @@ function createSystemPrompt(healthData: any) {
         const wife = current.wife || {};
 
         if (you.recovery) prompt += `- You: Recovery ${you.recovery.score}%, Sleep ${you.sleep?.hours || '--'}h, Strain ${you.strain?.current || '--'}\n`;
-        if (wife.activity) prompt += `- Wife: Sleep ${wife.sleep?.total_hours || '--'}h, Steps ${wife.activity.steps || '--'}\n`;
+        if (wife.activity) prompt += `- Meghna: Sleep ${wife.sleep?.total_hours || '--'}h, Steps ${wife.activity?.steps || '--'}\n`;
     }
 
     if (healthData.date_suggestion) {
@@ -105,11 +103,11 @@ function createSystemPrompt(healthData: any) {
 export async function POST(req: Request) {
     try {
         const { messages } = await req.json();
-        const openai = getOpenAIClient();
+        const genAI = getGeminiClient();
 
-        if (!openai) {
+        if (!genAI) {
             return NextResponse.json(
-                { error: "OpenAI API Key not configured. Please add OPENAI_API_KEY to your environment variables." },
+                { error: "Gemini API Key not configured. Please add GEMINI_API_KEY to your environment variables." },
                 { status: 500 }
             );
         }
@@ -117,19 +115,56 @@ export async function POST(req: Request) {
         const healthData = await getHealthData();
         const systemPrompt = createSystemPrompt(healthData);
 
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                { role: "system", content: systemPrompt },
-                ...messages
-            ],
-            temperature: 0.7,
-            max_tokens: 500,
+        // Configure model
+        const model = genAI.getGenerativeModel({
+            model: "gemini-3-flash-preview",
+            systemInstruction: systemPrompt,
         });
+
+        // Gemini history must be strictly validated:
+        // 1. First message must be 'user'
+        // 2. Roles must strictly alternate (user -> model -> user)
+        // 3. Last message in history should be 'model' so the next one can be 'user'
+
+        let history = messages.slice(0, -1).map((m: any) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+        }));
+
+        const validatedHistory = [];
+        let nextRole = 'user'; // We must start with a user message
+
+        for (const msg of history) {
+            if (msg.role === nextRole) {
+                validatedHistory.push(msg);
+                nextRole = nextRole === 'user' ? 'model' : 'user';
+            }
+        }
+
+        // Now history strictly alternates starting with 'user'.
+        // However, if it ends with 'user', Gemini will reject the next 'user' message.
+        // So it must either be empty or end with 'model'.
+        if (validatedHistory.length > 0 && validatedHistory[validatedHistory.length - 1].role === 'user') {
+            validatedHistory.pop();
+        }
+
+        const lastMessage = messages[messages.length - 1];
+
+        const chat = model.startChat({
+            history: validatedHistory,
+            generationConfig: {
+                maxOutputTokens: 4096,
+                temperature: 0.7,
+            },
+        });
+
+        const result = await chat.sendMessage(lastMessage.content);
+        const response = await result.response;
+        const text = response.text();
 
         return NextResponse.json({
             role: "assistant",
-            content: completion.choices[0].message.content
+            content: text
         });
 
     } catch (error: any) {

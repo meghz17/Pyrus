@@ -130,7 +130,7 @@ export default function Home() {
           />
 
           <HealthCard
-            title="Wife (Oura)"
+            title="Meghna (Oura)"
             type="oura"
             lastUpdated={data?.timestamp ? new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
             metrics={[
