@@ -4,11 +4,17 @@ import fs from 'fs';
 import path from 'path';
 import { supabase } from '@/lib/supabase';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
-    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
-});
+// Initialize OpenAI client lazily or with a check to prevent build-time crashes
+const getOpenAIClient = () => {
+    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+        return null;
+    }
+    return new OpenAI({
+        apiKey,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
+    });
+};
 
 async function getHealthData() {
     // 1. Try Supabase
@@ -99,6 +105,15 @@ function createSystemPrompt(healthData: any) {
 export async function POST(req: Request) {
     try {
         const { messages } = await req.json();
+        const openai = getOpenAIClient();
+
+        if (!openai) {
+            return NextResponse.json(
+                { error: "OpenAI API Key not configured. Please add OPENAI_API_KEY to your environment variables." },
+                { status: 500 }
+            );
+        }
+
         const healthData = await getHealthData();
         const systemPrompt = createSystemPrompt(healthData);
 
