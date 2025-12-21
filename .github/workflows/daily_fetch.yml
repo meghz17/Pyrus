@@ -28,10 +28,8 @@ jobs:
       env:
         WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
         WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
-        # Note: OAuth flow typically needs a refresh token flow if headless.
-        # This basic example assumes credentials are set or token file is handled.
-        # For a truly headless flow with Whoop, we might need to store the refresh token
-        # in Supabase or Secrets and update it.
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       run: python src/fetch_daily_whoop.py
       
     - name: Fetch Oura Data
