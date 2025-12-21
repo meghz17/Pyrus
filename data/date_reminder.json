@@ -1,0 +1,75 @@
+{
+  "reminder_needed": false,
+  "days_since_last_date": 4,
+  "last_date": {
+    "timestamp": "2025-10-15T19:00:00",
+    "type": "dinner",
+    "location": "Italian Restaurant",
+    "rating": 10
+  },
+  "urgency": "none",
+  "message": "You had a date just 4 days ago. Enjoy the memories! \ud83d\udc95",
+  "energy_levels": {
+    "your_recovery": 56.0,
+    "wife_readiness": 49,
+    "suggested_energy": "medium"
+  },
+  "suggested_dates": [
+    {
+      "id": 97,
+      "title": "Scavenger Hunt",
+      "description": "Create or join a city-wide scavenger hunt adventure",
+      "type": "fun",
+      "budget": "free",
+      "energy": "medium",
+      "season": "spring",
+      "indoor_outdoor": "outdoor",
+      "duration": "evening"
+    },
+    {
+      "id": 8,
+      "title": "Couples Cooking Class",
+      "description": "Learn to cook a new cuisine together in a professional cooking class",
+      "type": "romantic",
+      "budget": "moderate",
+      "energy": "medium",
+      "season": "any",
+      "indoor_outdoor": "indoor",
+      "duration": "evening"
+    },
+    {
+      "id": 67,
+      "title": "Live Concert",
+      "description": "See a band or orchestra perform live",
+      "type": "cultural",
+      "budget": "moderate",
+      "energy": "medium",
+      "season": "any",
+      "indoor_outdoor": "indoor",
+      "duration": "evening"
+    },
+    {
+      "id": 71,
+      "title": "Historical Site Tour",
+      "description": "Visit a historical landmark or take a guided heritage tour",
+      "type": "cultural",
+      "budget": "budget",
+      "energy": "medium",
+      "season": "spring",
+      "indoor_outdoor": "outdoor",
+      "duration": "half_day"
+    },
+    {
+      "id": 66,
+      "title": "Art Museum Visit",
+      "description": "Explore an art museum and discuss your favorite pieces",
+      "type": "cultural",
+      "budget": "budget",
+      "energy": "medium",
+      "season": "any",
+      "indoor_outdoor": "indoor",
+      "duration": "evening"
+    }
+  ],
+  "timestamp": "2025-10-20T03:59:57.039508+00:00"
+}

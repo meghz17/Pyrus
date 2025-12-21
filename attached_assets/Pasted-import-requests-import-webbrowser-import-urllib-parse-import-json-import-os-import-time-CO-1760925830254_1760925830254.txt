@@ -1,0 +1,122 @@
+import requests
+import webbrowser
+import urllib.parse
+import json
+import os
+import time
+
+# ====== CONFIG ======
+CLIENT_ID = "YOUR_CLIENT_ID"
+CLIENT_SECRET = "YOUR_CLIENT_SECRET"
+REDIRECT_URI = "http://localhost:3000/callback"
+SCOPES = "offline,read:recovery,read:sleep,read:workout,read:body_measurement"
+BASE_URL = "https://api.platform.whoop.com"
+TOKEN_FILE = "whoop_tokens.json"
+# ====================
+
+
+def load_tokens():
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as f:
+            return json.load(f)
+    return None
+
+
+def save_tokens(tokens):
+    with open(TOKEN_FILE, "w") as f:
+        json.dump(tokens, f, indent=2)
+
+
+def authorize():
+    auth_url = (
+        f"{BASE_URL}/oauth/oauth2/auth?"
+        f"response_type=code&client_id={CLIENT_ID}&"
+        f"redirect_uri={urllib.parse.quote(REDIRECT_URI)}&"
+        f"scope={urllib.parse.quote(SCOPES)}"
+    )
+    print("\nOpen this URL to authorize:\n")
+    print(auth_url)
+    webbrowser.open(auth_url)
+    print("\nAfter approval, paste the 'code' parameter from the redirect URL below.\n")
+    return input("Enter authorization code: ").strip()
+
+
+def exchange_code_for_token(code):
+    url = f"{BASE_URL}/oauth/oauth2/token"
+    data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": REDIRECT_URI,
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+    }
+    r = requests.post(url, data=data)
+    r.raise_for_status()
+    tokens = r.json()
+    tokens["timestamp"] = time.time()
+    save_tokens(tokens)
+    return tokens
+
+
+def refresh_token(refresh_token):
+    url = f"{BASE_URL}/oauth/oauth2/token"
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+    }
+    r = requests.post(url, data=data)
+    r.raise_for_status()
+    new_tokens = r.json()
+    new_tokens["timestamp"] = time.time()
+    save_tokens(new_tokens)
+    print("Access token refreshed.")
+    return new_tokens
+
+
+def get_valid_token():
+    tokens = load_tokens()
+    if not tokens:
+        code = authorize()
+        tokens = exchange_code_for_token(code)
+    else:
+        # WHOOP tokens last 1 hour typically
+        if time.time() - tokens.get("timestamp", 0) > 3500:
+            tokens = refresh_token(tokens["refresh_token"])
+    return tokens["access_token"]
+
+
+def fetch(endpoint, token):
+    url = f"{BASE_URL}/v2/{endpoint}"
+    headers = {"Authorization": f"Bearer {token}"}
+    r = requests.get(url, headers=headers)
+    if r.status_code == 401:
+        raise Exception("Access token expired or invalid.")
+    r.raise_for_status()
+    return r.json()
+
+
+def main():
+    access_token = get_valid_token()
+
+    print("\nFetching today's WHOOP data...\n")
+    endpoints = {
+        "profile": "user/profile",
+        "recovery": "recovery/day?limit=1",
+        "sleep": "sleep/day?limit=1",
+        "activity": "activity/day?limit=1",
+    }
+
+    for name, path in endpoints.items():
+        try:
+            data = fetch(path, access_token)
+            print(f"\n{name.upper()} DATA\n{'='*30}")
+            print(json.dumps(data, indent=2))
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"{name} fetch failed: {e}")
+
+
+if __name__ == "__main__":
+    main()

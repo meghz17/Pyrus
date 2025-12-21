@@ -1,0 +1,16 @@
+{
+  "name": "MMM-DateNightTracker",
+  "version": "1.0.0",
+  "description": "MagicMirror module to display Friday date night suggestions based on weekly health analysis",
+  "main": "MMM-DateNightTracker.js",
+  "author": "Pyrus Magic Mirror",
+  "license": "MIT",
+  "keywords": [
+    "magic mirror",
+    "magicmirror",
+    "smart mirror",
+    "magicmirror-module",
+    "date night",
+    "relationship"
+  ]
+}

@@ -1,0 +1,78 @@
+.MMM-HealthDashboard {
+    font-size: 20px;
+}
+
+.health-dashboard {
+    width: 100%;
+    padding: 20px;
+}
+
+.health-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.person-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.person-header {
+    font-size: 24px;
+    font-weight: bold;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.metric-label {
+    font-size: 18px;
+    flex: 1;
+}
+
+.metric-value {
+    font-size: 22px;
+    font-weight: bold;
+    text-align: right;
+    min-width: 100px;
+}
+
+.health-divider {
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+    margin: 10px 0;
+}
+
+@media (min-width: 768px) {
+    .health-container {
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 50px;
+    }
+
+    .person-section {
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .health-divider {
+        width: 2px;
+        height: auto;
+        background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
+        margin: 0;
+    }
+}

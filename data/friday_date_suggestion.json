@@ -1,0 +1,84 @@
+{
+  "generated_at": "2025-10-24T03:09:04.709925+00:00",
+  "day_of_week": "Friday",
+  "is_thursday": false,
+  "friday_date": {
+    "date": "2025-10-31T00:00:00",
+    "day_name": "Friday",
+    "reminder_needed": true,
+    "urgency": "first_date",
+    "message": "No dates recorded yet - time to start your Friday date night tradition! \ud83d\udc95"
+  },
+  "last_date": {
+    "days_since": null,
+    "location": null,
+    "date": null,
+    "rating": null
+  },
+  "weekly_health": {
+    "energy_score": 71.6,
+    "energy_level": "high",
+    "whoop_recovery_avg": 65.3,
+    "whoop_trend": "declining",
+    "oura_readiness_avg": 77.9,
+    "oura_trend": "declining",
+    "recommendation": "You both have great energy! Perfect for active or adventurous dates."
+  },
+  "suggested_dates": [
+    {
+      "id": 27,
+      "title": "Dance the Night Away",
+      "description": "Go dancing at a club or attend a live music venue with a dance floor",
+      "type": "active",
+      "budget": "budget",
+      "energy": "high",
+      "season": "any",
+      "indoor_outdoor": "indoor",
+      "duration": "evening"
+    },
+    {
+      "id": 24,
+      "title": "Bike Ride",
+      "description": "Cycle through town or on a scenic bike trail",
+      "type": "active",
+      "budget": "free",
+      "energy": "high",
+      "season": "summer",
+      "indoor_outdoor": "outdoor",
+      "duration": "evening"
+    },
+    {
+      "id": 56,
+      "title": "Zip Lining",
+      "description": "Soar through the treetops on a zip line course",
+      "type": "adventure",
+      "budget": "moderate",
+      "energy": "high",
+      "season": "spring",
+      "indoor_outdoor": "outdoor",
+      "duration": "half_day"
+    },
+    {
+      "id": 60,
+      "title": "Scuba Diving",
+      "description": "Explore underwater worlds together",
+      "type": "adventure",
+      "budget": "splurge",
+      "energy": "high",
+      "season": "summer",
+      "indoor_outdoor": "outdoor",
+      "duration": "full_day"
+    },
+    {
+      "id": 29,
+      "title": "Rollerblading",
+      "description": "Rollerblade through the park or along the beach boardwalk",
+      "type": "active",
+      "budget": "budget",
+      "energy": "high",
+      "season": "summer",
+      "indoor_outdoor": "outdoor",
+      "duration": "evening"
+    }
+  ]
+}

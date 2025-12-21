@@ -1,0 +1,46 @@
+name: Daily Health Fetch
+
+on:
+  schedule:
+    # Runs at 06:00 UTC daily
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  fetch-and-sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Fetch Whoop Data
+      env:
+        WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
+        WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+        # Note: OAuth flow typically needs a refresh token flow if headless.
+        # This basic example assumes credentials are set or token file is handled.
+        # For a truly headless flow with Whoop, we might need to store the refresh token
+        # in Supabase or Secrets and update it.
+      run: python src/fetch_daily_whoop.py
+      
+    - name: Fetch Oura Data
+      env:
+        OURA_ACCESS_TOKEN: ${{ secrets.OURA_ACCESS_TOKEN }}
+      run: python src/fetch_daily_oura.py
+      
+    - name: Combine and Push to Supabase
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: python src/health_combiner.py

@@ -1,0 +1,21 @@
+{
+  "name": "MMM-HealthDashboard",
+  "version": "1.0.0",
+  "description": "MagicMirror module to display dual wearable health data (Whoop + Oura Ring)",
+  "main": "MMM-HealthDashboard.js",
+  "author": "Pyrus Magic Mirror",
+  "license": "MIT",
+  "keywords": [
+    "magic mirror",
+    "magicmirror",
+    "smart mirror",
+    "magicmirror-module",
+    "health",
+    "whoop",
+    "oura"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/MMM-HealthDashboard.git"
+  }
+}
