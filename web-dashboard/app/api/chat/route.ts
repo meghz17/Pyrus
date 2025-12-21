@@ -121,31 +121,37 @@ export async function POST(req: Request) {
             systemInstruction: systemPrompt,
         });
 
-        // Gemini history must be strictly validated
-        // 1. Map roles: 'assistant' -> 'model', 'user' -> 'user'
-        // 2. Ensure history is not empty if we are starting a chat with it
-        // 3. (Crucial) The FIRST message in 'history' must be from 'user'.
+        // Gemini history must be strictly validated:
+        // 1. First message must be 'user'
+        // 2. Roles must strictly alternate (user -> model -> user)
+        // 3. Last message in history should be 'model' so the next one can be 'user'
 
         let history = messages.slice(0, -1).map((m: any) => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
         }));
 
-        // If history exists but starts with 'model', prepend a dummy user message or shift it.
-        // For a chatbot, if the first msg in DB is assistant (greeting?), Gemini rejects it.
-        if (history.length > 0 && history[0].role === 'model') {
-            // Option: Filter it out or prepend context. Filtering is safer for the API error.
-            // Or better: Prepend a context-setting user message if needed.
-            // Let's just remove leading model messages to comply with "First content... user".
-            while (history.length > 0 && history[0].role === 'model') {
-                history.shift();
+        const validatedHistory = [];
+        let nextRole = 'user'; // We must start with a user message
+
+        for (const msg of history) {
+            if (msg.role === nextRole) {
+                validatedHistory.push(msg);
+                nextRole = nextRole === 'user' ? 'model' : 'user';
             }
+        }
+
+        // Now history strictly alternates starting with 'user'.
+        // However, if it ends with 'user', Gemini will reject the next 'user' message.
+        // So it must either be empty or end with 'model'.
+        if (validatedHistory.length > 0 && validatedHistory[validatedHistory.length - 1].role === 'user') {
+            validatedHistory.pop();
         }
 
         const lastMessage = messages[messages.length - 1];
 
         const chat = model.startChat({
-            history: history,
+            history: validatedHistory,
             generationConfig: {
                 maxOutputTokens: 500,
             },
