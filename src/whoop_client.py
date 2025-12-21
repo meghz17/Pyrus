@@ -13,6 +13,8 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
+from supabase_client import get_token, save_token
+
 class WhoopClient:
     def __init__(
         self,
@@ -43,12 +45,28 @@ class WhoopClient:
         self.scopes = "offline read:recovery read:sleep read:workout read:cycles read:profile read:body_measurement"
         
     def _load_tokens(self) -> Optional[Dict[str, Any]]:
+        # 1. Try local file first
         if os.path.exists(self.token_file):
-            with open(self.token_file, "r") as f:
-                return json.load(f)
+            try:
+                with open(self.token_file, "r") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        
+        # 2. Try Supabase fallback
+        tokens = get_token("whoop")
+        if tokens:
+            # Sync back to local file if possible
+            try:
+                self._save_tokens_local(tokens)
+            except Exception:
+                pass
+            return tokens
+            
         return None
     
-    def _save_tokens(self, tokens: Dict[str, Any]) -> None:
+    def _save_tokens_local(self, tokens: Dict[str, Any]) -> None:
+        """Internal helper to save only to local file."""
         os.makedirs(os.path.dirname(self.token_file) or '.', exist_ok=True)
         temp_file = tempfile.NamedTemporaryFile(
             mode='w',
@@ -63,6 +81,19 @@ class WhoopClient:
             if os.path.exists(temp_file.name):
                 os.unlink(temp_file.name)
             raise
+
+    def _save_tokens(self, tokens: Dict[str, Any]) -> None:
+        # 1. Save locally
+        try:
+            self._save_tokens_local(tokens)
+        except Exception as e:
+            print(f"Warning: Failed to save tokens locally: {e}")
+        
+        # 2. Sync to Supabase
+        try:
+            save_token("whoop", tokens)
+        except Exception as e:
+            print(f"Warning: Failed to sync tokens to Supabase: {e}")
     
     def authorize(self) -> str:
         state = secrets.token_urlsafe(32)
@@ -154,8 +185,8 @@ class WhoopClient:
         if not tokens:
             if self.non_interactive:
                 raise Exception(
-                    "No authentication token found. Run the following command manually to authenticate:\n"
-                    f"  python {Path(__file__).resolve().parent / 'get_whoop_summary.py'}"
+                    "No authentication token found in local file or Supabase.\n"
+                    "Please run this locally once to seed the token into the cloud."
                 )
             code = self.authorize()
             tokens = self._exchange_code_for_token(code)
@@ -169,8 +200,8 @@ class WhoopClient:
                 else:
                     if self.non_interactive:
                         raise Exception(
-                            "Token refresh failed. Run the following command manually to re-authenticate:\n"
-                            f"  python {Path(__file__).resolve().parent / 'get_whoop_summary.py'}"
+                            "Token refresh failed and no interactive terminal available.\n"
+                            "Please run this locally to re-authenticate."
                         )
                     code = self.authorize()
                     tokens = self._exchange_code_for_token(code)

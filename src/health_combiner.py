@@ -40,8 +40,10 @@ REQUIREMENTS:
 import os
 import json
 import sys
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, Tuple
+from supabase_client import push_health_data
 
 
 def load_json_safe(filename: str) -> Optional[Dict[str, Any]]:
@@ -213,36 +215,50 @@ def save_combined_json(data: Dict[str, Any], filename: str) -> bool:
 def main():
     """
     Main execution function.
-    
-    Orchestrates the health data combination process:
-    1. Loads WHOOP data from whoop_daily.json
-    2. Loads Oura data from oura_daily.json
-    3. Merges data into unified structure
-    4. Saves to combined_health.json
-    
-    Exit codes:
-        0 - Success (at least one data source loaded and saved)
-        1 - Error (no data sources available or save failed)
     """
     print("\n🔄 Combining health data...")
     
-    whoop_file = "data/whoop_daily.json"
-    oura_file = "data/oura_daily.json"
-    output_file = "data/combined_health.json"
+    # 1. Define paths (relative to project root)
+    repo_root = Path(__file__).resolve().parent.parent
+    whoop_file = str(repo_root / "data" / "whoop_daily.json")
+    oura_file = str(repo_root / "data" / "oura_daily.json")
+    date_file = str(repo_root / "data" / "friday_date_suggestion.json")
+    output_file = str(repo_root / "data" / "combined_health.json")
     
-    print(f"✓ Combined health data saved to {output_file}")
+    # 2. Load individual data files
+    whoop_data = load_json_safe(whoop_file)
+    oura_data = load_json_safe(oura_file)
+    
+    if not whoop_data and not oura_data:
+        print("✗ Error: No health data found to combine.")
+        sys.exit(1)
+        
+    # 3. Merge data
+    combined_data = merge_health_data(whoop_data, oura_data)
+    
+    # 4. Save combined JSON locally
+    if save_combined_json(combined_data, output_file):
+        print(f"✓ Combined health data saved to {output_file}")
+    else:
+        print("✗ Error: Failed to save combined health data.")
+        sys.exit(1)
     
     # 5. Push to Supabase (Cloud Sync)
     print("\n☁️ Syncing to Supabase...")
-    date_file = "data/friday_date_suggestion.json"
     date_suggestion = load_json_safe(date_file)
     
+    # Use the 'whoop' or 'oura' keys from the individual data files if they exist
+    # Supabase push_health_data expects the raw metric objects
+    sync_whoop = whoop_data.get('whoop', {}) if whoop_data else {}
+    sync_oura = oura_data.get('oura', {}) if oura_data else {}
+    
     push_health_data(
-        user_data=whoop_data or {},
-        wife_data=oura_data or {},
+        user_data=sync_whoop,
+        wife_data=sync_oura,
         date_suggestion=date_suggestion
     )
     
+    # 6. Print summary
     print("\n" + "="*60)
     print("📊 COMBINED DATA SUMMARY")
     print("="*60)
@@ -271,7 +287,7 @@ def main():
     if 'wife' in combined_data:
         wife_data = combined_data['wife']
         device = wife_data.get('device', 'unknown')
-        print(f"\n👤 WIFE ({device.upper()})")
+        print(f"\n👤 MEGHNA ({device.upper()})")
         
         if 'readiness' in wife_data:
             readiness = wife_data['readiness']
