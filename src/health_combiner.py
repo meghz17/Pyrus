@@ -230,37 +230,18 @@ def main():
     oura_file = "data/oura_daily.json"
     output_file = "data/combined_health.json"
     
-    whoop_data = load_json_safe(whoop_file)
-    oura_data = load_json_safe(oura_file)
-    
-    if whoop_data:
-        date_str = whoop_data.get('date', 'unknown')
-        print(f"✓ Loaded WHOOP data (date: {date_str})")
-    else:
-        print(f"⚠ No WHOOP data available ({whoop_file} not found or invalid)")
-    
-    if oura_data:
-        date_str = oura_data.get('date', 'unknown')
-        print(f"✓ Loaded Oura data (date: {date_str})")
-    else:
-        print(f"⚠ No Oura data available ({oura_file} not found or invalid)")
-    
-    if not whoop_data and not oura_data:
-        print("✗ Error: No health data available to combine")
-        print("  Both whoop_daily.json and oura_daily.json are missing or invalid")
-        sys.exit(1)
-    
-    combined_data = merge_health_data(whoop_data, oura_data)
-    
-    if not combined_data.get('you') and not combined_data.get('wife'):
-        print("✗ Error: Merge produced no valid data")
-        sys.exit(1)
-    
-    if not save_combined_json(combined_data, output_file):
-        print("✗ Error: Failed to save combined data")
-        sys.exit(1)
-    
     print(f"✓ Combined health data saved to {output_file}")
+    
+    # 5. Push to Supabase (Cloud Sync)
+    print("\n☁️ Syncing to Supabase...")
+    date_file = "data/friday_date_suggestion.json"
+    date_suggestion = load_json_safe(date_file)
+    
+    push_health_data(
+        user_data=whoop_data or {},
+        wife_data=oura_data or {},
+        date_suggestion=date_suggestion
+    )
     
     print("\n" + "="*60)
     print("📊 COMBINED DATA SUMMARY")

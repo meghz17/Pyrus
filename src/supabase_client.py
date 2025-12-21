@@ -10,7 +10,7 @@ def get_supabase_client():
         
     return create_client(url, key)
 
-def push_health_data(user_data, wife_data):
+def push_health_data(user_data, wife_data, date_suggestion=None):
     """
     Pushes combined health data to Supabase 'health_metrics' table.
     """
@@ -22,8 +22,11 @@ def push_health_data(user_data, wife_data):
     data = {
         "user_data": user_data,
         "wife_data": wife_data,
-        "date": user_data.get("date"), # Assuming flattened structure has date
+        "date": user_data.get("date") or datetime.now().strftime("%Y-%m-%d"),
     }
+    
+    if date_suggestion:
+        data["date_suggestion"] = date_suggestion
     
     try:
         response = supabase.table("health_metrics").insert(data).execute()
