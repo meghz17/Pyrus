@@ -1,22 +1,23 @@
 {
   "date": "2025-12-21",
-  "timestamp": "2025-12-21T04:47:30.603799+00:00",
+  "timestamp": "2025-12-21T14:02:26.769345+00:00",
   "oura": {
-    "sleep": {
-      "total_hours": 6.98,
-      "efficiency": 87,
-      "rem_hours": 1.88,
-      "deep_hours": 1.35,
-      "light_hours": 3.76,
-      "awake_time": 1.02,
-      "latency_minutes": 52.0
-    },
     "activity": {
-      "score": 77,
-      "steps": 3456,
-      "calories_burned": 243,
+      "score": 68,
+      "steps": 73,
+      "calories_burned": 4,
       "active_minutes": null,
       "inactivity_alerts": 0
+    },
+    "workouts": {
+      "count": 1,
+      "workouts": [
+        {
+          "activity": "houseWork",
+          "calories": 40.75331115722656,
+          "duration_minutes": null
+        }
+      ]
     }
   }
 }

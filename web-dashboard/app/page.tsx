@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { HealthCard } from "@/components/HealthCard";
 import { AIChatOverlay } from "@/components/AIChatOverlay";
-import { Activity, Battery, Moon, Brain, Heart, Flame, Footprints } from "lucide-react";
+import { Activity, Battery, Moon, Brain, Heart, Flame, Footprints, Scale, Ruler, Zap } from "lucide-react";
 
 interface HealthData {
   date: string;
@@ -12,30 +12,51 @@ interface HealthData {
     recovery: {
       score: number;
       hrv: number;
+      resting_hr?: number;
+      spo2?: number;
+      skin_temp?: number;
     };
     sleep: {
       hours: number;
       performance: number;
+      efficiency?: number;
+      deep_hours?: number;
+      rem_hours?: number;
     };
     strain: {
       current: number;
+      workout_count?: number;
+    };
+    body?: {
+      height_meter?: number;
+      weight_kg?: number;
+      max_hr?: number;
     };
   };
   wife: {
     sleep: {
       total_hours: number;
+      efficiency?: number;
     };
     activity: {
       score: number;
       steps: number;
+      calories_burned?: number;
     };
-    // Note: Oura API structure varies, assuming readiness might be missing or calculated elsewhere?
-    // Based on JSON, 'readiness' isn't explicitly top-level in 'wife' object of the sample, 
-    // but usually Oura has it. The sample shows 'activity' and 'sleep'. 
-    // I'll leave readiness as a placeholder or mapped if available.
     readiness?: {
       score: number;
-    }
+      temperature_deviation?: number;
+    };
+    hrv?: {
+      average_hrv?: number;
+      lowest_hr?: number;
+      average_hr?: number;
+    };
+    stress?: {
+      stress_high?: number;
+      recovery_high?: number;
+      day_summary?: string;
+    };
   };
 }
 
@@ -82,16 +103,22 @@ export default function Home() {
     );
   }
 
-  // Safe checks for data existence
+  // Megh (Whoop) Data
   const recoveryScore = data?.you?.recovery?.score ?? 0;
   const sleepHoursYou = data?.you?.sleep?.hours?.toFixed(1) ?? "--";
   const strain = data?.you?.strain?.current?.toFixed(1) ?? "--";
   const hrv = data?.you?.recovery?.hrv?.toFixed(0) ?? "--";
+  const restingHr = data?.you?.recovery?.resting_hr?.toFixed(0) ?? "--";
+  const weightKg = data?.you?.body?.weight_kg?.toFixed(1) ?? "--";
+  const maxHr = data?.you?.body?.max_hr ?? "--";
 
-  const readinessScore = (data?.wife as any)?.readiness?.score ?? "--"; // Handling potential missing field structure
+  // Meghna (Oura) Data
+  const readinessScore = (data?.wife as any)?.readiness?.score ?? "--";
   const sleepHoursWife = data?.wife?.sleep?.total_hours?.toFixed(1) ?? "--";
   const activityScore = data?.wife?.activity?.score ?? "--";
   const stepsWife = data?.wife?.activity?.steps?.toLocaleString() ?? "--";
+  const avgHrvOura = data?.wife?.hrv?.average_hrv?.toFixed(0) ?? "--";
+  const lowestHrOura = data?.wife?.hrv?.lowest_hr ?? "--";
 
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12 selection:bg-white/10">
@@ -126,6 +153,8 @@ export default function Home() {
               { label: "Sleep", value: sleepHoursYou, unit: "h", icon: Moon, trend: "neutral" },
               { label: "Strain", value: strain, icon: Flame },
               { label: "HRV", value: hrv, unit: "ms", icon: Heart, trend: "neutral" },
+              { label: "Resting HR", value: restingHr, unit: "bpm", icon: Heart },
+              { label: "Weight", value: weightKg, unit: "kg", icon: Scale },
             ]}
           />
 
@@ -138,6 +167,8 @@ export default function Home() {
               { label: "Sleep", value: sleepHoursWife, unit: "h", icon: Moon, trend: "neutral" },
               { label: "Activity", value: activityScore, unit: "%", icon: Activity, trend: "neutral" },
               { label: "Steps", value: stepsWife, icon: Footprints },
+              { label: "Avg HRV", value: avgHrvOura, unit: "ms", icon: Heart },
+              { label: "Lowest HR", value: lowestHrOura, unit: "bpm", icon: Zap },
             ]}
           />
         </div>

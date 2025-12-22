@@ -1,6 +1,6 @@
 {
   "date": "2025-12-21",
-  "timestamp": "2025-12-21T13:31:46.281220+00:00",
+  "timestamp": "2025-12-21T14:00:49.007568+00:00",
   "whoop": {
     "recovery": {
       "score": 20.0,
@@ -8,6 +8,11 @@
       "hrv": 27.41049,
       "spo2": 94.2,
       "skin_temp": 35.206833
+    },
+    "body": {
+      "height_meter": 1.778,
+      "weight_kg": 90.0,
+      "max_hr": 185
     },
     "sleep": {
       "hours": 4.25,
@@ -21,7 +26,7 @@
       "respiratory_rate": 15.996094
     },
     "strain": {
-      "current": 15.021906,
+      "current": 15.022021,
       "workout_count": 0
     }
   }

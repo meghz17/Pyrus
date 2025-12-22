@@ -66,6 +66,20 @@ def fetch_recovery_data(client: WhoopClient) -> Optional[Dict[str, Any]]:
         return None
 
 
+def fetch_body_data(client: WhoopClient) -> Optional[Dict[str, Any]]:
+    """Fetch user body measurements (height, weight, max HR)."""
+    try:
+        body = client.get_body_measurements()
+        return {
+            "height_meter": body.get("height_meter"),
+            "weight_kg": body.get("weight_kilogram"),
+            "max_hr": body.get("max_heart_rate")
+        }
+    except Exception as e:
+        print(f"⚠ Could not fetch body measurements: {e}")
+        return None
+
+
 def fetch_sleep_data(client: WhoopClient) -> Optional[Dict[str, Any]]:
     """Fetch the latest sleep data."""
     try:
@@ -187,6 +201,7 @@ def main():
     
     # Fetch all data
     recovery_data = fetch_recovery_data(client)
+    body_data = fetch_body_data(client)
     sleep_data = fetch_sleep_data(client)
     strain_data = fetch_strain_data(client)
     
@@ -205,6 +220,8 @@ def main():
     
     if recovery_data:
         output_data["whoop"]["recovery"] = recovery_data
+    if body_data:
+        output_data["whoop"]["body"] = body_data
     if sleep_data:
         output_data["whoop"]["sleep"] = sleep_data
     if strain_data:

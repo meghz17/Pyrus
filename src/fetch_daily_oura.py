@@ -146,6 +146,58 @@ def fetch_activity_data(client: OuraClient) -> Optional[Dict[str, Any]]:
         return None
 
 
+def fetch_stress_data(client: OuraClient) -> Optional[Dict[str, Any]]:
+    """Fetch daily stress data (Gen3 ring only)."""
+    try:
+        stress = client.get_daily_stress()
+        if not stress.get('data'):
+            return None  # No stress data (likely Gen2 ring)
+        s = stress['data'][0]
+        return {
+            "stress_high": s.get("stress_high"),
+            "recovery_high": s.get("recovery_high"),
+            "day_summary": s.get("day_summary")
+        }
+    except Exception:
+        return None  # Silently fail for Gen2 rings
+
+
+def fetch_workout_data(client: OuraClient) -> Optional[Dict[str, Any]]:
+    """Fetch detected workouts."""
+    try:
+        workouts = client.get_workouts()
+        if not workouts.get('data'):
+            return None
+        return {
+            "count": len(workouts['data']),
+            "workouts": [
+                {
+                    "activity": w.get("activity"),
+                    "calories": w.get("calories"),
+                    "duration_minutes": round(w.get("duration", 0) / 60, 1) if w.get("duration") else None
+                } for w in workouts['data'][:5]  # Limit to 5 recent
+            ]
+        }
+    except Exception:
+        return None
+
+
+def fetch_hrv_data(client: OuraClient) -> Optional[Dict[str, Any]]:
+    """Fetch heart rate variability and HR details from sleep data."""
+    try:
+        sleep = client.get_sleep(limit=1)
+        if not sleep.get('data'):
+            return None
+        s = sleep['data'][0]
+        return {
+            "average_hrv": s.get("average_hrv"),
+            "lowest_hr": s.get("lowest_heart_rate"),
+            "average_hr": s.get("average_heart_rate")
+        }
+    except Exception:
+        return None
+
+
 def print_summary(data: Dict[str, Any]) -> None:
     """Print a human-readable summary of the fetched data."""
     print("\n" + "="*60)
@@ -190,9 +242,15 @@ def main():
     
     client = OuraClient()
     
+    # Core data
     readiness_data = fetch_readiness_data(client)
     sleep_data = fetch_sleep_data(client)
     activity_data = fetch_activity_data(client)
+    
+    # Extended data
+    stress_data = fetch_stress_data(client)
+    workout_data = fetch_workout_data(client)
+    hrv_data = fetch_hrv_data(client)
     
     if not any([readiness_data, sleep_data, activity_data]):
         print("✗ Failed to fetch any Oura data")
@@ -211,6 +269,12 @@ def main():
         output_data["oura"]["sleep"] = sleep_data
     if activity_data:
         output_data["oura"]["activity"] = activity_data
+    if stress_data:
+        output_data["oura"]["stress"] = stress_data
+    if workout_data:
+        output_data["oura"]["workouts"] = workout_data
+    if hrv_data:
+        output_data["oura"]["hrv"] = hrv_data
     
     output_file = "data/oura_daily.json"
     try:
