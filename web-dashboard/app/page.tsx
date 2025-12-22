@@ -135,10 +135,25 @@ export default function Home() {
             <p className="text-zinc-400 text-lg">{currentDate}</p>
           </div>
 
-          <div className="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-full border border-zinc-800">
-            <div className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold uppercase tracking-wider border border-emerald-500/20">
-              All Systems Nominal
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-full border border-zinc-800">
+              <div className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold uppercase tracking-wider border border-emerald-500/20">
+                All Systems Nominal
+              </div>
             </div>
+            {data?.timestamp && (
+              <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>
+                  Data from: {new Date(data.timestamp).toLocaleString([], {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+            )}
           </div>
         </header>
 
