@@ -1,13 +1,13 @@
 {
-  "date": "2025-12-21",
-  "timestamp": "2025-12-21T14:00:49.007568+00:00",
+  "date": "2025-12-22",
+  "timestamp": "2025-12-22T06:41:18.054610+00:00",
   "whoop": {
     "recovery": {
-      "score": 20.0,
-      "resting_hr": 64.0,
-      "hrv": 27.41049,
-      "spo2": 94.2,
-      "skin_temp": 35.206833
+      "score": 17.0,
+      "resting_hr": 71.0,
+      "hrv": 27.501736,
+      "spo2": 96.5,
+      "skin_temp": 33.9705
     },
     "body": {
       "height_meter": 1.778,
@@ -15,18 +15,18 @@
       "max_hr": 185
     },
     "sleep": {
-      "hours": 4.25,
-      "performance": 50.0,
-      "efficiency": 97.452385,
-      "rem_hours": 0.82,
-      "deep_hours": 1.38,
-      "light_hours": 1.95,
-      "awake_hours": 0.11,
-      "cycles": 3,
-      "respiratory_rate": 15.996094
+      "hours": 3.46,
+      "performance": 31.0,
+      "efficiency": 98.316,
+      "rem_hours": 1.33,
+      "deep_hours": 1.13,
+      "light_hours": 0.94,
+      "awake_hours": 0.06,
+      "cycles": 2,
+      "respiratory_rate": 17.033691
     },
     "strain": {
-      "current": 15.022021,
+      "current": 1.1933405,
       "workout_count": 0
     }
   }

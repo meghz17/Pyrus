@@ -257,8 +257,54 @@ def main():
         sys.exit(1)
     
     now = datetime.now(timezone.utc)
+    date_str = now.strftime("%Y-%m-%d")
+    
+    # =================================================================
+    # Phase J: Build FLAT metrics dict for direct Supabase push
+    # =================================================================
+    flat_metrics = {
+        "date": date_str,
+        
+        # Readiness
+        "readiness_score": readiness_data.get("score") if readiness_data else None,
+        "temp_deviation": readiness_data.get("temperature_deviation") if readiness_data else None,
+        "hrv_balance": readiness_data.get("hrv_balance") if readiness_data else None,
+        
+        # Sleep
+        "sleep_hours": sleep_data.get("total_hours") if sleep_data else None,
+        "sleep_efficiency": sleep_data.get("efficiency") if sleep_data else None,
+        "rem_hours": sleep_data.get("rem_hours") if sleep_data else None,
+        "deep_hours": sleep_data.get("deep_hours") if sleep_data else None,
+        "light_hours": sleep_data.get("light_hours") if sleep_data else None,
+        "awake_hours": sleep_data.get("awake_time") if sleep_data else None,
+        "latency_minutes": sleep_data.get("latency_minutes") if sleep_data else None,
+        "lowest_hr": hrv_data.get("lowest_hr") if hrv_data else (readiness_data.get("resting_hr") if readiness_data else None),
+        "average_hr": hrv_data.get("average_hr") if hrv_data else None,
+        "average_hrv": hrv_data.get("average_hrv") if hrv_data else None,
+        
+        # Activity
+        "activity_score": activity_data.get("score") if activity_data else None,
+        "steps": activity_data.get("steps") if activity_data else None,
+        "active_calories": activity_data.get("calories_burned") if activity_data else None,
+        "high_activity_minutes": activity_data.get("active_minutes") if activity_data else None,
+        
+        # Stress (Gen3)
+        "stress_high": stress_data.get("stress_high") if stress_data else None,
+        "recovery_high": stress_data.get("recovery_high") if stress_data else None,
+        
+        # SpO2
+        "spo2_avg": readiness_data.get("spo2") if readiness_data else None,
+    }
+    
+    # Push to Supabase oura_metrics table
+    from supabase_client import push_oura_metrics
+    push_oura_metrics(flat_metrics)
+    
+    # =================================================================
+    # Also save local JSON for backup/debugging
+    # =================================================================
     output_data = {
-        "date": now.strftime("%Y-%m-%d"),
+        "date": date_str,
         "timestamp": now.isoformat(),
         "oura": {}
     }
@@ -276,14 +322,16 @@ def main():
     if hrv_data:
         output_data["oura"]["hrv"] = hrv_data
     
-    output_file = "data/oura_daily.json"
+    from pathlib import Path
+    repo_root = Path(__file__).resolve().parent.parent
+    output_file = repo_root / "data" / "oura_daily.json"
     try:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             json.dump(output_data, f, indent=2)
-        print(f"✓ Data saved to: {os.path.abspath(output_file)}")
+        print(f"✓ Local backup saved: {output_file}")
     except Exception as e:
-        print(f"✗ Error saving JSON file: {e}")
-        sys.exit(1)
+        print(f"⚠ Could not save local backup: {e}")
     
     print_summary(output_data)
     

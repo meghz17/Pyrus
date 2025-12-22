@@ -210,10 +210,52 @@ def main():
         print("✗ Failed to fetch any Whoop data")
         sys.exit(1)
     
-    # Build output structure
     now = datetime.now(timezone.utc)
+    date_str = now.strftime("%Y-%m-%d")
+    
+    # =================================================================
+    # Phase J: Build FLAT metrics dict for direct Supabase push
+    # =================================================================
+    flat_metrics = {
+        "date": date_str,
+        
+        # Recovery
+        "recovery_score": recovery_data.get("score") if recovery_data else None,
+        "resting_hr": recovery_data.get("resting_hr") if recovery_data else None,
+        "hrv_rmssd": recovery_data.get("hrv") if recovery_data else None,
+        "spo2": recovery_data.get("spo2") if recovery_data else None,
+        "skin_temp_c": recovery_data.get("skin_temp") if recovery_data else None,
+        
+        # Sleep
+        "sleep_hours": sleep_data.get("hours") if sleep_data else None,
+        "sleep_performance": sleep_data.get("performance") if sleep_data else None,
+        "sleep_efficiency": sleep_data.get("efficiency") if sleep_data else None,
+        "rem_hours": sleep_data.get("rem_hours") if sleep_data else None,
+        "deep_hours": sleep_data.get("deep_hours") if sleep_data else None,
+        "light_hours": sleep_data.get("light_hours") if sleep_data else None,
+        "awake_hours": sleep_data.get("awake_hours") if sleep_data else None,
+        "sleep_cycles": sleep_data.get("cycles") if sleep_data else None,
+        "respiratory_rate": sleep_data.get("respiratory_rate") if sleep_data else None,
+        
+        # Strain
+        "strain_score": strain_data.get("current") if strain_data else None,
+        "workout_count": strain_data.get("workout_count") if strain_data else None,
+        
+        # Body
+        "height_m": body_data.get("height_meter") if body_data else None,
+        "weight_kg": body_data.get("weight_kg") if body_data else None,
+        "max_hr": body_data.get("max_hr") if body_data else None,
+    }
+    
+    # Push to Supabase whoop_metrics table
+    from supabase_client import push_whoop_metrics
+    push_whoop_metrics(flat_metrics)
+    
+    # =================================================================
+    # Also save local JSON for backup/debugging
+    # =================================================================
     output_data = {
-        "date": now.strftime("%Y-%m-%d"),
+        "date": date_str,
         "timestamp": now.isoformat(),
         "whoop": {}
     }
@@ -227,7 +269,6 @@ def main():
     if strain_data:
         output_data["whoop"]["strain"] = strain_data
     
-    # Save to JSON file (use absolute path for cron compatibility)
     repo_root = Path(__file__).resolve().parent.parent
     output_dir = repo_root / "data"
     output_file = output_dir / "whoop_daily.json"
@@ -235,10 +276,9 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
         with open(output_file, 'w') as f:
             json.dump(output_data, f, indent=2)
-        print(f"✓ Data saved to: {output_file}")
+        print(f"✓ Local backup saved: {output_file}")
     except Exception as e:
-        print(f"✗ Error saving JSON file: {e}")
-        sys.exit(1)
+        print(f"⚠ Could not save local backup: {e}")
     
     # Print summary
     print_summary(output_data)
