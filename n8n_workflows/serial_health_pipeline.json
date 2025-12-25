@@ -1,0 +1,487 @@
+{
+    "name": "Pyrus Health Serial Pipeline (Robust)",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "triggerAtHour": 8
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                0,
+                0
+            ],
+            "id": "trigger",
+            "name": "Morning Trigger"
+        },
+        {
+            "parameters": {
+                "url": "https://api.prod.whoop.com/developer/v2/recovery",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "oAuth2Api",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "start",
+                            "value": "={{ $today.minus(1, 'day').toISO() }}"
+                        },
+                        {
+                            "name": "end",
+                            "value": "={{ $today.toISO() }}"
+                        },
+                        {
+                            "name": "limit",
+                            "value": "1"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                220,
+                0
+            ],
+            "id": "whoop_recovery",
+            "name": "Whoop Recovery"
+        },
+        {
+            "parameters": {
+                "url": "https://api.prod.whoop.com/developer/v2/activity/sleep",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "oAuth2Api",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "start",
+                            "value": "={{ $today.minus(1, 'day').toISO() }}"
+                        },
+                        {
+                            "name": "end",
+                            "value": "={{ $today.toISO() }}"
+                        },
+                        {
+                            "name": "limit",
+                            "value": "1"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                440,
+                0
+            ],
+            "id": "whoop_sleep",
+            "name": "Whoop Sleep"
+        },
+        {
+            "parameters": {
+                "url": "https://api.prod.whoop.com/developer/v2/cycle",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "oAuth2Api",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "start",
+                            "value": "={{ $today.minus(1, 'day').toISO() }}"
+                        },
+                        {
+                            "name": "end",
+                            "value": "={{ $today.toISO() }}"
+                        },
+                        {
+                            "name": "limit",
+                            "value": "1"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                660,
+                0
+            ],
+            "id": "whoop_cycle",
+            "name": "Whoop Cycle"
+        },
+        {
+            "parameters": {
+                "jsCode": "const recovery = $('Whoop Recovery').first().json;\nconst sleep = $('Whoop Sleep').first().json;\nconst cycle = $('Whoop Cycle').first().json;\n\nconst merged = {\n  user_id: 'partner_a',\n  date: new Date().toISOString().split('T')[0],\n  recovery_score: recovery.records?.[0]?.score?.recovery_score,\n  hrv_rmssd_milli: recovery.records?.[0]?.score?.hrv_rmssd_milli,\n  resting_heart_rate: recovery.records?.[0]?.score?.resting_heart_rate,\n  spo2_percentage: recovery.records?.[0]?.score?.spo2_percentage,\n  skin_temp_celsius: recovery.records?.[0]?.score?.skin_temp_celsius,\n  sleep_performance_percentage: sleep.records?.[0]?.score?.sleep_performance_percentage,\n  sleep_efficiency_percentage: sleep.records?.[0]?.score?.sleep_efficiency_percentage,\n  sleep_duration_minutes: Math.round(sleep.records?.[0]?.score?.total_sleep_duration_milli / 60000),\n  rem_sleep_minutes: Math.round(sleep.records?.[0]?.score?.stage_summary?.total_rem_sleep_milli / 60000),\n  deep_sleep_minutes: Math.round(sleep.records?.[0]?.score?.stage_summary?.total_slow_wave_sleep_milli / 60000),\n  light_sleep_minutes: Math.round(sleep.records?.[0]?.score?.stage_summary?.total_light_sleep_milli / 60000),\n  sleep_disturbances: sleep.records?.[0]?.score?.sleep_disturbances,\n  day_strain: cycle.records?.[0]?.score?.strain,\n  energy_burned_calories: Math.round(cycle.records?.[0]?.score?.kilojoule / 4.184),\n  avg_heart_rate: cycle.records?.[0]?.score?.average_heart_rate,\n  max_heart_rate: cycle.records?.[0]?.score?.max_heart_rate\n};\n\nreturn [{json: merged}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                880,
+                0
+            ],
+            "id": "transform_whoop",
+            "name": "Transform Whoop"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://pyrus-core:8000/api/ingest/whoop",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json }}"
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1100,
+                0
+            ],
+            "id": "save_whoop",
+            "name": "Save Whoop"
+        },
+        {
+            "parameters": {
+                "url": "https://api.ouraring.com/v2/usercollection/daily_readiness",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "ouraApi",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "start_date",
+                            "value": "={{ $today.minus(1, 'day').format('yyyy-MM-dd') }}"
+                        },
+                        {
+                            "name": "end_date",
+                            "value": "={{ $today.format('yyyy-MM-dd') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                220,
+                220
+            ],
+            "id": "oura_readiness",
+            "name": "Oura Readiness"
+        },
+        {
+            "parameters": {
+                "url": "https://api.ouraring.com/v2/usercollection/daily_sleep",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "ouraApi",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "start_date",
+                            "value": "={{ $today.minus(1, 'day').format('yyyy-MM-dd') }}"
+                        },
+                        {
+                            "name": "end_date",
+                            "value": "={{ $today.format('yyyy-MM-dd') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                440,
+                220
+            ],
+            "id": "oura_sleep",
+            "name": "Oura Sleep"
+        },
+        {
+            "parameters": {
+                "url": "https://api.ouraring.com/v2/usercollection/daily_activity",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "ouraApi",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "start_date",
+                            "value": "={{ $today.minus(1, 'day').format('yyyy-MM-dd') }}"
+                        },
+                        {
+                            "name": "end_date",
+                            "value": "={{ $today.format('yyyy-MM-dd') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                660,
+                220
+            ],
+            "id": "oura_activity",
+            "name": "Oura Activity"
+        },
+        {
+            "parameters": {
+                "jsCode": "const readiness = $('Oura Readiness').first().json;\nconst sleep = $('Oura Sleep').first().json;\nconst activity = $('Oura Activity').first().json;\n\nconst merged = {\n  user_id: 'partner_b',\n  date: new Date().toISOString().split('T')[0],\n  readiness_score: readiness.data?.[0]?.score,\n  temperature_deviation: readiness.data?.[0]?.contributors?.temperature_deviation,\n  hrv_balance: readiness.data?.[0]?.contributors?.hrv_balance,\n  sleep_score: sleep.data?.[0]?.score,\n  total_sleep_duration_seconds: sleep.data?.[0]?.total_sleep_duration,\n  sleep_efficiency: sleep.data?.[0]?.efficiency,\n  rem_sleep_duration_seconds: sleep.data?.[0]?.rem_sleep_duration,\n  deep_sleep_duration_seconds: sleep.data?.[0]?.deep_sleep_duration,\n  light_sleep_duration_seconds: sleep.data?.[0]?.light_sleep_duration,\n  sleep_latency_seconds: sleep.data?.[0]?.latency,\n  restlessness: sleep.data?.[0]?.restless_periods,\n  activity_score: activity.data?.[0]?.score,\n  steps: activity.data?.[0]?.steps,\n  active_calories: activity.data?.[0]?.active_calories,\n  total_calories: activity.data?.[0]?.total_calories,\n  met_minutes_high: activity.data?.[0]?.high_activity_met_minutes,\n  met_minutes_medium: activity.data?.[0]?.medium_activity_met_minutes,\n  met_minutes_low: activity.data?.[0]?.low_activity_met_minutes\n};\n\nreturn [{json: merged}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                880,
+                220
+            ],
+            "id": "transform_oura",
+            "name": "Transform Oura"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://pyrus-core:8000/api/ingest/oura",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json }}"
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1100,
+                220
+            ],
+            "id": "save_oura",
+            "name": "Save Oura"
+        },
+        {
+            "parameters": {
+                "url": "=http://pyrus-core:8000/api/wellness/daily?target_date={{ $today.format('yyyy-MM-dd') }}"
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1320,
+                100
+            ],
+            "id": "calc_wellness",
+            "name": "Calculate Wellness"
+        },
+        {
+            "parameters": {
+                "url": "=http://pyrus-core:8000/api/suggestions?target_date={{ $today.format('yyyy-MM-dd') }}"
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1540,
+                100
+            ],
+            "id": "gen_suggestions",
+            "name": "Generate Suggestions"
+        },
+        {
+            "parameters": {
+                "jsCode": "const data = $input.first().json;\n\nconst partnerA = data.today?.partner_a_wellness || 0;\nconst partnerB = data.today?.partner_b_wellness || 0;\nconst suggestions = data.today?.suggestions || [];\nconst upcomingDays = data.upcoming_optimal_days || [];\n\nconst whoop = $('Transform Whoop').first().json || {};\nconst oura = $('Transform Oura').first().json || {};\n\nlet message = `🌟 Daily Wellness Report\\n\\n`;\n\n// Meghanath (Whoop)\nmessage += `👱‍♂️ Meghanath: ${partnerA}% `;\nmessage += partnerA >= 80 ? '🔥' : partnerA >= 60 ? '✅' : '😴';\nmessage += `\\n   • Recovery: ${whoop.recovery_score || 0}%`;\nmessage += `\\n   • Strain: ${whoop.day_strain || 0}`; \nmessage += `\\n   • Sleep: ${whoop.sleep_performance_percentage || 0}% (${Math.round(whoop.sleep_duration_minutes/60*10)/10}h)\\n`;\n\n// Meghna (Oura)\nmessage += `\\n👩 Meghna: ${partnerB}% `;\nmessage += partnerB >= 80 ? '🔥' : partnerB >= 60 ? '✅' : '😴';\nmessage += `\\n   • Readiness: ${oura.readiness_score || 0}%`;\nmessage += `\\n   • Activity: ${oura.activity_score || 0}`; \nmessage += `\\n   • Sleep: ${oura.sleep_score || 0}% (${Math.round(oura.total_sleep_duration_seconds/3600*10)/10}h)\\n`;\n\nmessage += `\\n💡 Today's Suggestions:\\n`;\n\nsuggestions.forEach(s => {\n  let text = s.replace(/Partner A/g, 'Meghanath').replace(/Partner B/g, 'Meghna');\n  message += `${text}\\n`;\n});\n\nif (upcomingDays.length > 0) {\n  message += `\\n📅 Upcoming Optimal Days:\\n`;\n  upcomingDays.forEach(day => {\n    message += `- ${day.date}: ${day.suggestion.replace(/Partner A/g, 'Meghanath').replace(/Partner B/g, 'Meghna')}\\n`;\n  });\n}\n\nreturn [{json: {text: message}}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1760,
+                100
+            ],
+            "id": "format_message",
+            "name": "Format Message"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.telegram.org/bot8318826480:AAHAJ3-QQoNIg4jFJIkNEk-TlGD5rIOwXGs/sendMessage",
+                "sendBody": true,
+                "specifyBody": "keypair",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "chat_id",
+                            "value": "6283940658"
+                        },
+                        {
+                            "name": "text",
+                            "value": "={{ $json.text }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1980,
+                100
+            ],
+            "id": "send_telegram",
+            "name": "Send Telegram"
+        }
+    ],
+    "connections": {
+        "Morning Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Whoop Recovery",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Whoop Recovery": {
+            "main": [
+                [
+                    {
+                        "node": "Whoop Sleep",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Whoop Sleep": {
+            "main": [
+                [
+                    {
+                        "node": "Whoop Cycle",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Whoop Cycle": {
+            "main": [
+                [
+                    {
+                        "node": "Transform Whoop",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transform Whoop": {
+            "main": [
+                [
+                    {
+                        "node": "Save Whoop",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save Whoop": {
+            "main": [
+                [
+                    {
+                        "node": "Oura Readiness",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Oura Readiness": {
+            "main": [
+                [
+                    {
+                        "node": "Oura Sleep",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Oura Sleep": {
+            "main": [
+                [
+                    {
+                        "node": "Oura Activity",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Oura Activity": {
+            "main": [
+                [
+                    {
+                        "node": "Transform Oura",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transform Oura": {
+            "main": [
+                [
+                    {
+                        "node": "Save Oura",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save Oura": {
+            "main": [
+                [
+                    {
+                        "node": "Calculate Wellness",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Calculate Wellness": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Suggestions",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Suggestions": {
+            "main": [
+                [
+                    {
+                        "node": "Format Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Message": {
+            "main": [
+                [
+                    {
+                        "node": "Send Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
