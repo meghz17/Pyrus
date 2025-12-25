@@ -2,8 +2,8 @@ name: Daily Health Fetch
 
 on:
   schedule:
-    # Runs hourly
-    - cron: '0 * * * *'
+    # Runs daily at 6 AM UTC (10 PM PST / 11 PM PDT)
+    - cron: '0 6 * * *'
   workflow_dispatch: # Allows manual trigger
 
 jobs:
